@@ -1,0 +1,12 @@
+---
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/WatchLLM/watchllm-oss/discussions
+    about: Ask questions, share ideas, or discuss the project
+  - name: 📖 Documentation
+    url: https://docs.watchllm.dev
+    about: Read the official WatchLLM documentation
+  - name: 🌐 Website
+    url: https://watchllm.dev
+    about: WatchLLM product and cloud platform

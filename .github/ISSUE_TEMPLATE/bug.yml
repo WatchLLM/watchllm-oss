@@ -1,0 +1,40 @@
+---
+name: Bug Report
+about: Report a bug or unexpected behavior
+title: "[bug] "
+labels: bug, triage
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: "## Bug Report"
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options: [kernel, vscode, schemas, examples, docs]
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Steps to reproduce, expected vs actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python/Node version, relevant setup details
+      placeholder: |
+        - OS: macOS 14
+        - Python: 3.11.4
+        - Node: 20.11
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or output
+      render: shell

@@ -1,0 +1,9 @@
+# WatchLLM OSS — Code Owners
+# Each component is owned by the WatchLLM core team
+
+* @kaadipranav
+kernel/ @kaadipranav
+schemas/ @kaadipranav
+vscode/ @kaadipranav
+examples/ @kaadipranav
+.github/ @kaadipranav
