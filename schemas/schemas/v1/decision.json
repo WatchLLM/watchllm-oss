@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://watchllm.dev/schemas/v1/decision.json",
+  "title": "Decision",
+  "description": "Represents the aggregated decision issued by the WatchLLM Kernel (Python internal shape).  For the cross‑component Wasm/CLI contract see `kernel_execution_result.json`.",
+  "type": "object",
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": ["ALLOW", "BLOCK"],
+      "description": "Top-level verdict of the kernel evaluation."
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["enforce", "shadow"],
+      "description": "Evaluation mode: enforce blocks on first FAIL, shadow records but allows."
+    },
+    "file_path": {
+      "type": ["string", "null"],
+      "description": "Path of the evaluated file, or null for stdin evaluation."
+    },
+    "language": {
+      "type": "string",
+      "description": "Source language identifier (javascript, typescript, tsx)."
+    },
+    "rule_results": {
+      "type": "array",
+      "description": "Per‑rule evaluation results (Python kernel internal shape).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "description": "Canonical rule identifier."
+          },
+          "decision": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "INCONCLUSIVE"],
+            "description": "Per‑rule decision (INCONCLUSIVE for branch‑contained auth guards)."
+          },
+          "violations": {
+            "type": "array",
+            "items": {
+              "$ref": "violation.json"
+            }
+          }
+        },
+        "required": ["rule_id", "decision", "violations"]
+      }
+    }
+  },
+  "required": ["decision", "mode", "language", "rule_results"]
+}

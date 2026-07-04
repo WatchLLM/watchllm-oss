@@ -1,0 +1,70 @@
+{
+  "name": "watchllm-vscode",
+  "displayName": "WatchLLM",
+  "description": "Deterministic save-path governance for autonomous coding agents.",
+  "version": "0.1.0",
+  "publisher": "watchllm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/watchllm/vscode.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Security"
+  ],
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "WatchLLM",
+      "properties": {
+        "watchllm.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "markdownDescription": "Python executable used to run the local WatchLLM kernel."
+        },
+        "watchllm.kernelPath": {
+          "type": "string",
+          "default": "-m watchllm_kernel evaluate",
+          "markdownDescription": "Kernel invocation arguments passed to Python. This value is read as configuration only and is not executed through a shell."
+        },
+        "watchllm.mode": {
+          "type": "string",
+          "enum": [
+            "enforce",
+            "shadow"
+          ],
+          "default": "enforce",
+          "markdownDescription": "WatchLLM operating mode.",
+          "enumDescriptions": [
+            "Block saves when the kernel reports a violation.",
+            "Run checks without blocking saves."
+          ]
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "node esbuild.js --production",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "bundle": "node esbuild.js",
+    "bundle:watch": "node esbuild.js --watch",
+    "package": "vsce package",
+    "test": "npm run compile && node --test out/test/kernelExecutor.test.js out/test/saveHook.test.js out/test/diagnostics.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.22.0",
+    "esbuild": "^0.19.11",
+    "typescript": "^5.3.3"
+  }
+}

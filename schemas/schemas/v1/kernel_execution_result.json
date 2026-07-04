@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://watchllm.dev/schemas/v1/kernel_execution_result.json",
+  "title": "KernelExecutionResult",
+  "description": "The cross‑component contract for WatchLLM evaluation results.  Used by the Rust runtime (Wasm + CLI) and consumed by VSCode, Klyd, Replay, and the Orchestrator.  This is the canonical serialization shape for all non‑Python consumers.",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["ok", "error"],
+      "description": "Execution status: 'ok' for successful evaluation, 'error' for a caught internal error."
+    },
+    "exit_code": {
+      "type": "integer",
+      "enum": [0, 1, 2],
+      "description": "Standard exit code: 0 = allowed (no violations), 1 = blocked (violations found), 2 = internal error."
+    },
+    "payload": {
+      "description": "Evaluation payload.  Present when status is 'ok'; null when status is 'error'.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "allowed": {
+              "type": "boolean",
+              "description": "Whether the source is allowed (true) or blocked (false)."
+            },
+            "violations": {
+              "type": "array",
+              "description": "Violations detected during evaluation.",
+              "items": {
+                "$ref": "violation.json"
+              }
+            }
+          },
+          "required": ["allowed", "violations"]
+        },
+        { "type": "null" }
+      ]
+    },
+    "error": {
+      "description": "Error message.  Present when status is 'error'; null when status is 'ok'.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "null" }
+      ]
+    }
+  },
+  "required": ["status", "exit_code", "payload", "error"]
+}

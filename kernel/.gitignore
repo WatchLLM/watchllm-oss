@@ -1,0 +1,9 @@
+.aider*
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+dist/
+build/
+.watchllm/
+.aider.conf.yml

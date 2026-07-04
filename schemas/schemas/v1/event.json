@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Event",
+  "description": "An execution event emitted by the WatchLLM system.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["parse_started", "parse_completed", "violation_detected", "save_blocked", "save_allowed"]
+    },
+    "agent_id": {
+      "type": ["string", "null"]
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "required": ["event_id", "timestamp", "type"]
+}

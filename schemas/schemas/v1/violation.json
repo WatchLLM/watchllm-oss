@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://watchllm.dev/schemas/v1/violation.json",
+  "title": "Violation",
+  "description": "Represents a single rule violation detected by the WatchLLM Kernel.  Shared across Python kernel, Rust runtime, and Wasm consumers.",
+  "type": "object",
+  "properties": {
+    "rule_id": {
+      "type": "string",
+      "description": "Canonical rule identifier (e.g. SECRET_LITERAL, FORBIDDEN_IMPORT)."
+    },
+    "rule": {
+      "type": "string",
+      "description": "Alias for rule_id used by the Rust runtime (e.g. 'secrets', 'imports', 'boundaries', 'auth_flow'). At least one of rule_id or rule must be present."
+    },
+    "severity": {
+      "type": "string",
+      "description": "Severity level.  Python kernel uses the canonical enum (CRITICAL | HIGH | MEDIUM | LOW | INFO); the Rust runtime uses lower-case short forms (error | warning | info).  Consumers must accept both.",
+      "oneOf": [
+        {
+          "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"],
+          "description": "Python kernel canonical form."
+        },
+        {
+          "enum": ["error", "warning", "info"],
+          "description": "Rust runtime short form."
+        }
+      ]
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable description of the violation."
+    },
+    "line": {
+      "type": "integer",
+      "description": "1‑based line number.  Used by the Rust runtime flat structure; mutually exclusive with location.line."
+    },
+    "column": {
+      "type": "integer",
+      "description": "1‑based column number.  Used by the Rust runtime flat structure; mutually exclusive with location.column."
+    },
+    "location": {
+      "description": "Structured source location span (Python kernel).  May be null when the location is not available.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "properties": {
+            "line":   { "type": "integer" },
+            "column": { "type": "integer" },
+            "end_line":   { "type": "integer" },
+            "end_column": { "type": "integer" }
+          },
+          "required": ["line", "column"]
+        }
+      ]
+    },
+    "evidence": {
+      "type": "string",
+      "description": "Optional snippet of the source code that triggered the violation."
+    }
+  },
+  "required": ["severity", "message"],
+  "anyOf": [
+    { "required": ["rule_id"] },
+    { "required": ["rule"] }
+  ]
+}
