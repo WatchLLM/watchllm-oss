@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import * as fs from 'fs';
 import type { WatchLlmConfig } from './config';
 
 export interface KernelExecutionRequest {
@@ -24,7 +25,7 @@ export interface KernelExecutionResult {
     errorMessage?: string;
 }
 
-const DEFAULT_TIMEOUT_MS = 5_000;
+const DEFAULT_TIMEOUT_MS = 800;
 
 function splitArgs(input: string): string[] {
     const args: string[] = [];
@@ -95,34 +96,78 @@ function parseStdoutJson(stdout: string): { ok: true; value: unknown } | { ok: f
     }
 }
 
+/** Build the argv array for the Rust watchllm-cli binary. */
+function buildRustArgs(request: KernelExecutionRequest): string[] | null {
+    const rustPath = request.config.rustCliPath;
+    if (!rustPath) {
+        return null;
+    }
+    // Verify the binary exists before committing to it.
+    try {
+        if (!fs.existsSync(rustPath)) {
+            return null;
+        }
+    } catch {
+        return null;
+    }
+    return [
+        rustPath,
+        '--stdin',
+        '--json',
+        '--language', request.language,
+        '--mode', request.config.mode,
+    ];
+}
+
+/** Build the argv array for the Python watchllm-kernel subprocess. */
+function buildPythonArgs(request: KernelExecutionRequest): { executable: string; args: string[] } | null {
+    let kernelArgs: string[];
+    try {
+        kernelArgs = splitArgs(request.config.kernelPath);
+    } catch {
+        return null;
+    }
+    return {
+        executable: request.config.pythonPath,
+        args: [
+            ...kernelArgs,
+            '--stdin',
+            '--json',
+            '--language', request.language,
+            '--mode', request.config.mode,
+        ],
+    };
+}
+
 export function runKernelCheck(request: KernelExecutionRequest): Promise<KernelExecutionResult> {
     const timeoutMs = request.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-    let kernelArgs: string[];
+    // --- Runtime selection: prefer Rust CLI if configured and present on disk,
+    //     fall back to Python kernel subprocess.
+    const rustArgv = buildRustArgs(request);
+    let executable: string;
+    let args: string[];
 
-    try {
-        kernelArgs = splitArgs(request.config.kernelPath);
-    } catch (error) {
-        return Promise.resolve({
-            status: 'spawnError',
-            exitCode: null,
-            signal: null,
-            stdout: '',
-            stderr: '',
-            json: null,
-            errorMessage: error instanceof Error ? error.message : 'Invalid kernel configuration.'
-        });
+    if (rustArgv !== null) {
+        // Rust path: the first element is the binary, rest are args.
+        executable = rustArgv[0];
+        args = rustArgv.slice(1);
+    } else {
+        const pythonSpec = buildPythonArgs(request);
+        if (pythonSpec === null) {
+            return Promise.resolve({
+                status: 'spawnError',
+                exitCode: null,
+                signal: null,
+                stdout: '',
+                stderr: '',
+                json: null,
+                errorMessage: 'Invalid kernel configuration: could not resolve Python or Rust executor.'
+            });
+        }
+        executable = pythonSpec.executable;
+        args = pythonSpec.args;
     }
-
-    const args = [
-        ...kernelArgs,
-        '--stdin',
-        '--json',
-        '--language',
-        request.language,
-        '--mode',
-        request.config.mode
-    ];
 
     return new Promise<KernelExecutionResult>((resolve) => {
         let settled = false;
@@ -130,7 +175,7 @@ export function runKernelCheck(request: KernelExecutionRequest): Promise<KernelE
         let stdout = '';
         let stderr = '';
 
-        const child = spawn(request.config.pythonPath, args, {
+        const child = spawn(executable, args, {
             shell: false,
             windowsHide: true,
             stdio: ['pipe', 'pipe', 'pipe']

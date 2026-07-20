@@ -64,15 +64,15 @@ class TestModels(unittest.TestCase):
         self.assertIsNone(v.evidence)
 
     def test_rule_result_pass(self):
-        rr = RuleResult(rule_id="R1", decision=RuleDecision.PASS)
+        rr = RuleResult(rule_id="R1", status=RuleDecision.PASS)
         self.assertEqual(rr.rule_id, "R1")
-        self.assertEqual(rr.decision, RuleDecision.PASS)
+        self.assertEqual(rr.status, RuleDecision.PASS)
         self.assertEqual(rr.violations, [])
 
     def test_rule_result_fail_with_violations(self):
         v = Violation(rule_id="R1", message="fail")
-        rr = RuleResult(rule_id="R1", decision=RuleDecision.FAIL, violations=[v])
-        self.assertEqual(rr.decision, RuleDecision.FAIL)
+        rr = RuleResult(rule_id="R1", status=RuleDecision.FAIL, violations=[v])
+        self.assertEqual(rr.status, RuleDecision.FAIL)
         self.assertEqual(len(rr.violations), 1)
         self.assertEqual(rr.violations[0].message, "fail")
 

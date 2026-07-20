@@ -76,9 +76,11 @@ def infer_source_module(file_path: str | None) -> str:
     if "auth" in segments:
         return "auth"
 
-    # Check basename for auth_ or auth- prefix
+    # Check basename for auth prefix or exact match
     basename = segments[-1] if segments else ""
     if basename.startswith("auth_") or basename.startswith("auth-"):
+        return "auth"
+    if basename.rsplit(".", 1)[0] == "auth":
         return "auth"
 
     return "unknown"
@@ -107,6 +109,8 @@ def classify_import_target(import_path: str) -> tuple[str | None, str | None]:
         "../../db/internal",
         "../../../db/internal",
         "@app/db/internal",
+        "@internal/db",
+        "@internal/db/",
     ):
         if _matches_path_prefix(normalised, prefix):
             return ("db", "internal")
@@ -186,13 +190,22 @@ class BoundaryRule(Rule):
 
     def __init__(self, boundary_map=None):
         super().__init__(
-            rule_id="BOUNDARY",
+            rule_id="watchllm-rule-boundaries",
             name="Boundary rule",
             description="Blocks imports that violate declared service/module boundaries.",
         )
-        self.boundary_map = (
-            boundary_map if boundary_map is not None else DEFAULT_BOUNDARY_MAP
-        )
+        if boundary_map is not None:
+            # Convert JSON/YAML lists to tuples for equality checks
+            converted_map = {}
+            for source, policy in boundary_map.items():
+                converted_policy = {}
+                for key in ["forbidden", "allowed"]:
+                    if key in policy:
+                        converted_policy[key] = tuple(tuple(item) for item in policy[key])
+                converted_map[source] = converted_policy
+            self.boundary_map = converted_map
+        else:
+            self.boundary_map = DEFAULT_BOUNDARY_MAP
 
     def evaluate(self, source: str, file_path: str | None = None, parse_result=None) -> RuleResult:
         edges = extract_import_edges(source, file_path=file_path, parse_result=parse_result)
@@ -216,7 +229,7 @@ class BoundaryRule(Rule):
         if violations:
             return RuleResult(
                 rule_id=self.rule_id,
-                decision=RuleDecision.FAIL,
+                status=RuleDecision.FAIL,
                 violations=violations,
             )
-        return RuleResult(rule_id=self.rule_id, decision=RuleDecision.PASS)
+        return RuleResult(rule_id=self.rule_id, status=RuleDecision.PASS)

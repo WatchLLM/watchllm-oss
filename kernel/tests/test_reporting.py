@@ -33,7 +33,7 @@ def _make_blocked_result() -> KernelResult:
     )
     rule_result = RuleResult(
         rule_id="RULE_ID",
-        decision=RuleDecision.FAIL,
+        status=RuleDecision.FAIL,
         violations=[violation],
     )
     return KernelResult(

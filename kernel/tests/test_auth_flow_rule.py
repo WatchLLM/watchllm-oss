@@ -49,7 +49,7 @@ class TestAuthFlowRule(unittest.TestCase):
         source = read_fixture("fail", "mutation_before_auth.ts")
         rule = AuthFlowRule()
         result = rule.evaluate(source, file_path="handler.ts")
-        self.assertEqual(result.decision, RuleDecision.FAIL)
+        self.assertEqual(result.status, RuleDecision.FAIL)
         self.assertEqual(len(result.violations), 1)
         self.assertEqual(result.violations[0].evidence, "db.user.update")
 
@@ -57,7 +57,7 @@ class TestAuthFlowRule(unittest.TestCase):
         source = read_fixture("pass", "auth_before_mutation.ts")
         rule = AuthFlowRule()
         result = rule.evaluate(source, file_path="handler.ts")
-        self.assertEqual(result.decision, RuleDecision.PASS)
+        self.assertEqual(result.status, RuleDecision.PASS)
         self.assertEqual(result.violations, [])
 
     def test_ambiguous_auth_guard_is_inconclusive(self):
@@ -71,7 +71,7 @@ class TestAuthFlowRule(unittest.TestCase):
         )
         rule = AuthFlowRule()
         result = rule.evaluate(source, file_path="handler.ts")
-        self.assertEqual(result.decision, RuleDecision.INCONCLUSIVE)
+        self.assertEqual(result.status, RuleDecision.INCONCLUSIVE)
         self.assertEqual(result.violations, [])
 
     def test_inconclusive_policy_is_documented(self):
@@ -86,7 +86,7 @@ class TestAuthFlowRule(unittest.TestCase):
         )
         rule = AuthFlowRule()
         result = rule.evaluate(source, file_path="helper.ts")
-        self.assertEqual(result.decision, RuleDecision.PASS)
+        self.assertEqual(result.status, RuleDecision.PASS)
 
 
 if __name__ == "__main__":

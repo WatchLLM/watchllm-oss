@@ -258,7 +258,7 @@ class AuthFlowRule(Rule):
 
     def __init__(self):
         super().__init__(
-            rule_id="AUTH_FLOW",
+            rule_id="watchllm-rule-auth",
             name="Auth flow rule",
             description="Requires explicit auth verification before protected operations in handler scope.",
         )
@@ -281,7 +281,7 @@ class AuthFlowRule(Rule):
                 if saw_ambiguous_guard:
                     return RuleResult(
                         rule_id=self.rule_id,
-                        decision=RuleDecision.INCONCLUSIVE,
+                        status=RuleDecision.INCONCLUSIVE,
                     )
                 # No guard seen at all
                 violation = Violation(
@@ -293,8 +293,8 @@ class AuthFlowRule(Rule):
                 )
                 return RuleResult(
                     rule_id=self.rule_id,
-                    decision=RuleDecision.FAIL,
+                    status=RuleDecision.FAIL,
                     violations=[violation],
                 )
 
-        return RuleResult(rule_id=self.rule_id, decision=RuleDecision.PASS)
+        return RuleResult(rule_id=self.rule_id, status=RuleDecision.PASS)

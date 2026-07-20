@@ -48,12 +48,13 @@ class TestCLI(unittest.TestCase):
     # Task 11 CLI evaluation tests
     # ------------------------------------------------------------------
 
-    def _run_evaluate(self, file_path: Path, mode="enforce", extra_args=None):
+    def _run_check(self, file_path: Path, mode="enforce", extra_args=None):
         cmd = [
             sys.executable,
             "-m",
             "watchllm_kernel",
-            "evaluate",
+            "check",
+            "--filepath",
             str(file_path),
             "--json",
             "--mode",
@@ -67,7 +68,7 @@ class TestCLI(unittest.TestCase):
     def test_evaluate_secret_pass_returns_allow(self):
         """env_stripe_secret.ts should be ALLOW in enforce mode"""
         fixture = FIXTURES_DIR / "secrets" / "pass" / "env_stripe_secret.ts"
-        proc = self._run_evaluate(fixture)
+        proc = self._run_check(fixture)
         self.assertEqual(proc.returncode, 0, msg=proc.stderr)
         payload = json.loads(proc.stdout)
         self.assertEqual(payload["decision"], "ALLOW")
@@ -75,7 +76,7 @@ class TestCLI(unittest.TestCase):
     def test_evaluate_secret_fail_returns_block(self):
         """hardcoded_stripe_secret.ts should be BLOCK in enforce mode"""
         fixture = FIXTURES_DIR / "secrets" / "fail" / "hardcoded_stripe_secret.ts"
-        proc = self._run_evaluate(fixture)
+        proc = self._run_check(fixture)
         self.assertNotEqual(proc.returncode, 0, msg=proc.stderr)
         payload = json.loads(proc.stdout)
         self.assertEqual(payload["decision"], "BLOCK")
@@ -83,7 +84,7 @@ class TestCLI(unittest.TestCase):
     def test_evaluate_forbidden_import_fail_returns_block(self):
         """child_process_import.js should be BLOCK in enforce mode"""
         fixture = FIXTURES_DIR / "forbidden_imports" / "fail" / "child_process_import.js"
-        proc = self._run_evaluate(fixture)
+        proc = self._run_check(fixture)
         self.assertNotEqual(proc.returncode, 0, msg=proc.stderr)
         payload = json.loads(proc.stdout)
         self.assertEqual(payload["decision"], "BLOCK")
@@ -91,13 +92,13 @@ class TestCLI(unittest.TestCase):
     def test_evaluate_shadow_mode_allows_failing_fixture(self):
         """hardcoded_stripe_secret.ts in shadow mode should be ALLOW but contain a FAIL rule result"""
         fixture = FIXTURES_DIR / "secrets" / "fail" / "hardcoded_stripe_secret.ts"
-        proc = self._run_evaluate(fixture, mode="shadow")
+        proc = self._run_check(fixture, mode="shadow")
         self.assertEqual(proc.returncode, 0, msg=proc.stderr)
         payload = json.loads(proc.stdout)
         self.assertEqual(payload["decision"], "ALLOW")
         self.assertTrue(
             any(
-                rule_result["decision"] == "FAIL"
+                rule_result["status"] == "FAIL"
                 for rule_result in payload["rule_results"]
             )
         )
@@ -109,7 +110,7 @@ class TestCLI(unittest.TestCase):
             sys.executable,
             "-m",
             "watchllm_kernel",
-            "evaluate",
+            "check",
             "--stdin",
             "--json",
             "--mode",
@@ -137,11 +138,12 @@ class TestCLI(unittest.TestCase):
                 sys.executable,
                 "-m",
                 "watchllm_kernel",
-                "evaluate",
+                "check",
+                "--filepath",
                 str(fixture),
                 "--json",
                 "--language",
-                "javascript",
+                "js",
                 "--mode",
                 "enforce",
             ]

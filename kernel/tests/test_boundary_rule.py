@@ -64,14 +64,14 @@ class TestBoundaryRule(unittest.TestCase):
     def test_disallowed_cross_boundary_edge_fails(self):
         source = read_fixture("fail", "auth_imports_db_internal.ts")
         result = BoundaryRule().evaluate(source, file_path="src/auth/load-user.ts")
-        self.assertEqual(result.decision, RuleDecision.FAIL)
+        self.assertEqual(result.status, RuleDecision.FAIL)
         self.assertEqual(len(result.violations), 1)
         self.assertEqual(result.violations[0].evidence, "../db/internal/query")
 
     def test_allowed_boundary_edge_passes(self):
         source = read_fixture("pass", "auth_imports_public_contract.ts")
         result = BoundaryRule().evaluate(source, file_path="src/auth/load-user.ts")
-        self.assertEqual(result.decision, RuleDecision.PASS)
+        self.assertEqual(result.status, RuleDecision.PASS)
         self.assertEqual(result.violations, [])
 
     # -- violation helper -------------------------------------------------------

@@ -148,25 +148,13 @@ class ForbiddenImportRule(Rule):
         allowed_relative_prefixes: frozenset[str] | None = None,
     ):
         super().__init__(
-            rule_id="FORBIDDEN_IMPORT",
+            rule_id="watchllm-rule-imports",
             name="Forbidden import rule",
             description="Blocks dangerous imports and disallowed internal path patterns.",
         )
-        self.forbidden_modules = (
-            forbidden_modules
-            if forbidden_modules is not None
-            else DEFAULT_FORBIDDEN_MODULES
-        )
-        self.forbidden_prefixes = (
-            forbidden_prefixes
-            if forbidden_prefixes is not None
-            else DEFAULT_FORBIDDEN_PREFIXES
-        )
-        self.allowed_relative_prefixes = (
-            allowed_relative_prefixes
-            if allowed_relative_prefixes is not None
-            else DEFAULT_ALLOWED_RELATIVE_PREFIXES
-        )
+        self.forbidden_modules = frozenset(forbidden_modules) if forbidden_modules is not None else DEFAULT_FORBIDDEN_MODULES
+        self.forbidden_prefixes = frozenset(forbidden_prefixes) if forbidden_prefixes is not None else DEFAULT_FORBIDDEN_PREFIXES
+        self.allowed_relative_prefixes = frozenset(allowed_relative_prefixes) if allowed_relative_prefixes is not None else DEFAULT_ALLOWED_RELATIVE_PREFIXES
 
     def evaluate(self, source: str, file_path: str | None = None, parse_result=None) -> RuleResult:
         import_paths = extract_import_paths(source, file_path=file_path, parse_result=parse_result)
@@ -208,7 +196,7 @@ class ForbiddenImportRule(Rule):
         if violations:
             return RuleResult(
                 rule_id=self.rule_id,
-                decision=RuleDecision.FAIL,
+                status=RuleDecision.FAIL,
                 violations=violations,
             )
-        return RuleResult(rule_id=self.rule_id, decision=RuleDecision.PASS)
+        return RuleResult(rule_id=self.rule_id, status=RuleDecision.PASS)

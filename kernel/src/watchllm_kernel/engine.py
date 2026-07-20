@@ -34,7 +34,7 @@ def has_blocking_failure(rule_results: list[RuleResult]) -> bool:
 
     PASS and INCONCLUSIVE are not considered blocking for Task 10.
     """
-    return any(rr.decision == RuleDecision.FAIL for rr in rule_results)
+    return any(rr.status == RuleDecision.FAIL for rr in rule_results)
 
 
 def collect_violations(rule_results: list[RuleResult]) -> list[Violation]:

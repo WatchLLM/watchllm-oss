@@ -53,7 +53,7 @@ class Violation:
 class RuleResult:
     """Result of evaluating a single rule."""
     rule_id: str
-    decision: RuleDecision
+    status: RuleDecision
     violations: list[Violation] = dataclasses.field(default_factory=list)
 
 

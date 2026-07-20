@@ -128,7 +128,7 @@ class SecretLiteralRule(Rule):
 
     def __init__(self):
         super().__init__(
-            rule_id="SECRET_LITERAL",
+            rule_id="watchllm-rule-secrets",
             name="Secret literal rule",
             description="Blocks hardcoded credential patterns when they appear in assignment or dangerous call contexts.",
         )
@@ -184,7 +184,7 @@ class SecretLiteralRule(Rule):
         if violations:
             return RuleResult(
                 rule_id=self.rule_id,
-                decision=RuleDecision.FAIL,
+                status=RuleDecision.FAIL,
                 violations=violations,
             )
-        return RuleResult(rule_id=self.rule_id, decision=RuleDecision.PASS)
+        return RuleResult(rule_id=self.rule_id, status=RuleDecision.PASS)

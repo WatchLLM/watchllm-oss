@@ -31,7 +31,7 @@ class PassingRule(Rule):
         super().__init__(rule_id="PASSING_RULE", name="Passing rule")
 
     def evaluate(self, source: str, file_path: str | None = None, **kwargs) -> RuleResult:
-        return RuleResult(rule_id=self.rule_id, decision=RuleDecision.PASS)
+        return RuleResult(rule_id=self.rule_id, status=RuleDecision.PASS)
 
 
 class FailingRule(Rule):
@@ -41,7 +41,7 @@ class FailingRule(Rule):
     def evaluate(self, source: str, file_path: str | None = None, **kwargs) -> RuleResult:
         return RuleResult(
             rule_id=self.rule_id,
-            decision=RuleDecision.FAIL,
+            status=RuleDecision.FAIL,
             violations=[
                 Violation(
                     rule_id=self.rule_id,
@@ -61,7 +61,7 @@ class InconclusiveRule(Rule):
     def evaluate(self, source: str, file_path: str | None = None, **kwargs) -> RuleResult:
         return RuleResult(
             rule_id=self.rule_id,
-            decision=RuleDecision.INCONCLUSIVE,
+            status=RuleDecision.INCONCLUSIVE,
         )
 
 
@@ -77,8 +77,8 @@ class TestEngine(unittest.TestCase):
             rules=[PassingRule(), FailingRule()],
         )
         self.assertEqual(len(result.rule_results), 2)
-        self.assertEqual(result.rule_results[0].decision, RuleDecision.PASS)
-        self.assertEqual(result.rule_results[1].decision, RuleDecision.FAIL)
+        self.assertEqual(result.rule_results[0].status, RuleDecision.PASS)
+        self.assertEqual(result.rule_results[1].status, RuleDecision.FAIL)
 
     def test_enforce_blocks_if_any_rule_fails(self):
         result = evaluate_source(
@@ -104,13 +104,13 @@ class TestEngine(unittest.TestCase):
         )
         self.assertEqual(result.decision, Decision.ALLOW)
         self.assertTrue(
-            any(rr.decision == RuleDecision.FAIL for rr in result.rule_results)
+            any(rr.status == RuleDecision.FAIL for rr in result.rule_results)
         )
 
     def test_collect_violations_preserves_order(self):
         rr1 = RuleResult(
             rule_id="R1",
-            decision=RuleDecision.FAIL,
+            status=RuleDecision.FAIL,
             violations=[
                 Violation(rule_id="R1", message="first"),
                 Violation(rule_id="R1", message="second"),
@@ -118,7 +118,7 @@ class TestEngine(unittest.TestCase):
         )
         rr2 = RuleResult(
             rule_id="R2",
-            decision=RuleDecision.FAIL,
+            status=RuleDecision.FAIL,
             violations=[Violation(rule_id="R2", message="third")],
         )
         violations = collect_violations([rr1, rr2])

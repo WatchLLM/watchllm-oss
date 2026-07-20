@@ -12,6 +12,7 @@ from watchllm_kernel.reporting import format_human_report, write_block_log
 from watchllm_kernel.rules.auth_flow import AuthFlowRule
 from watchllm_kernel.rules.boundary import BoundaryRule
 from watchllm_kernel.rules.forbidden_imports import ForbiddenImportRule
+from watchllm_kernel.config_loader import load_config
 
 
 # ---------------------------------------------------------------------------
@@ -30,12 +31,10 @@ def _to_jsonable(obj: Any) -> Any:
     return obj
 
 
-def build_default_rules():
-    """Return the default rule set for the kernel CLI.
-
-    The secret‑literal rule is optional; if the module is not available it is
-    silently skipped.
+def build_default_rules(config: dict | None = None):
+    """Return the default rule set for the kernel CLI, applying overrides from config.
     """
+    config = config or {}
     rules = []
 
     try:
@@ -44,13 +43,31 @@ def build_default_rules():
         SecretLiteralRule = None
 
     if SecretLiteralRule is not None:
-        rules.append(SecretLiteralRule())
+        secrets_cfg = config.get("rules", {}).get("secrets", {})
+        if secrets_cfg.get("enabled", True):
+            rules.append(SecretLiteralRule())
 
-    rules.extend([
-        ForbiddenImportRule(),
-        BoundaryRule(),
-        AuthFlowRule(),
-    ])
+    # Build Forbidden Import Rule
+    fi_cfg = config.get("rules", {}).get("forbidden_imports", {})
+    if fi_cfg.get("enabled", True):
+        rules.append(ForbiddenImportRule(
+            forbidden_modules=fi_cfg.get("modules"),
+            forbidden_prefixes=fi_cfg.get("forbidden_prefixes"),
+            allowed_relative_prefixes=fi_cfg.get("allowed_relative_prefixes")
+        ))
+
+    # Build Boundary Rule
+    boundary_cfg = config.get("rules", {}).get("boundary", {})
+    if boundary_cfg.get("enabled", True):
+        rules.append(BoundaryRule(
+            boundary_map=boundary_cfg.get("map")
+        ))
+
+    # Build Auth Flow Rule
+    auth_cfg = config.get("rules", {}).get("auth_flow", {})
+    if auth_cfg.get("enabled", True):
+        rules.append(AuthFlowRule())
+
     return rules
 
 
@@ -72,30 +89,31 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command", help="sub-command")
 
-    # evaluate
-    eval_parser = sub.add_parser("evaluate", help="Evaluate source against rules")
-    eval_parser.add_argument(
+    # check
+    check_parser = sub.add_parser("check", help="Check source against rules")
+    check_parser.add_argument(
         "--stdin",
         action="store_true",
         help="Read source from stdin instead of a file path",
     )
-    eval_parser.add_argument(
-        "file",
-        nargs="?",
+    check_parser.add_argument(
+        "--filepath",
+        default=None,
         help="Path to source file (ignored when --stdin is used)",
     )
-    eval_parser.add_argument(
+    check_parser.add_argument(
         "--language",
+        choices=["js", "ts"],
         default=None,
-        help="Language identifier (e.g. javascript, typescript). Inferred from file extension when omitted.",
+        help="Language identifier (js or ts). Inferred from file extension when omitted.",
     )
-    eval_parser.add_argument(
+    check_parser.add_argument(
         "--mode",
         choices=[ENFORCE_MODE, SHADOW_MODE],
         default=ENFORCE_MODE,
         help="Evaluation mode (default: enforce)",
     )
-    eval_parser.add_argument(
+    check_parser.add_argument(
         "--json",
         action="store_true",
         help="Output result as JSON",
@@ -104,11 +122,20 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 # ---------------------------------------------------------------------------
-# Language inference
+# Language resolution
 # ---------------------------------------------------------------------------
 
+_LANGUAGE_SHORT_MAP = {
+    "js": "javascript",
+    "ts": "typescript",
+}
 
-def _infer_language(file_path: str | None) -> str | None:
+
+def _resolve_language(language: str | None, file_path: str | None) -> str | None:
+    if language and language in _LANGUAGE_SHORT_MAP:
+        return _LANGUAGE_SHORT_MAP[language]
+    if language:
+        return language
     if file_path is None:
         return None
     suffix = Path(file_path).suffix.lower()
@@ -135,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
 
-    if args.command != "evaluate":
+    if args.command != "check":
         parser.print_help()
         return 0
 
@@ -144,20 +171,24 @@ def main(argv: list[str] | None = None) -> int:
         source = sys.stdin.read()
         file_path = None
     else:
-        if args.file is None:
-            print("Error: either --stdin or a file path is required", file=sys.stderr)
+        if args.filepath is None:
+            print("Error: either --stdin or --filepath is required", file=sys.stderr)
             return 2
-        file_path = args.file
+        file_path = args.filepath
         try:
             source = Path(file_path).read_text(encoding="utf-8")
         except Exception as exc:
             print(f"Error reading file {file_path}: {exc}", file=sys.stderr)
             return 2
 
-    language = args.language or _infer_language(file_path)
+    language = _resolve_language(args.language, file_path)
+
+    # --- load config ---
+    start_path = str(Path(file_path).parent) if file_path else "."
+    config = load_config(start_path=start_path)
 
     # --- evaluate ---
-    rules = build_default_rules()
+    rules = build_default_rules(config=config)
     result = evaluate_source(
         source,
         file_path=file_path,

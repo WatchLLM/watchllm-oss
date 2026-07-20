@@ -22,7 +22,7 @@ class TestCLIContract(unittest.TestCase):
     # ------------------------------------------------------------------
 
     def _run(self, *args, stdin_text=None, env=None):
-        cmd = [sys.executable, "-m", "watchllm_kernel", "evaluate", *args]
+        cmd = [sys.executable, "-m", "watchllm_kernel", "check", *args]
         proc = subprocess.run(
             cmd,
             input=stdin_text,
@@ -40,9 +40,9 @@ class TestCLIContract(unittest.TestCase):
         """Failing fixture in enforce mode exits 1 and returns BLOCK JSON."""
         fixture = FIXTURES_DIR / "forbidden_imports" / "fail" / "child_process_import.js"
         proc = self._run(
-            str(fixture),
+            "--filepath", str(fixture),
             "--json",
-            "--language", "javascript",
+            "--language", "js",
             "--mode", "enforce",
         )
         self.assertEqual(proc.returncode, 1, msg=proc.stderr)
@@ -55,9 +55,9 @@ class TestCLIContract(unittest.TestCase):
         """Failing fixture in shadow mode exits 0 and returns ALLOW JSON."""
         fixture = FIXTURES_DIR / "forbidden_imports" / "fail" / "child_process_import.js"
         proc = self._run(
-            str(fixture),
+            "--filepath", str(fixture),
             "--json",
-            "--language", "javascript",
+            "--language", "js",
             "--mode", "shadow",
         )
         self.assertEqual(proc.returncode, 0, msg=proc.stderr)
@@ -65,7 +65,7 @@ class TestCLIContract(unittest.TestCase):
         self.assertEqual(payload["decision"], "ALLOW")
         self.assertTrue(
             any(
-                rr["decision"] == "FAIL"
+                rr["status"] == "FAIL"
                 for rr in payload["rule_results"]
             ),
             "Shadow mode should preserve failing rule results",
@@ -81,7 +81,7 @@ class TestCLIContract(unittest.TestCase):
         proc = self._run(
             "--stdin",
             "--json",
-            "--language", "javascript",
+            "--language", "js",
             "--mode", "enforce",
             stdin_text=source,
         )
@@ -99,7 +99,7 @@ class TestCLIContract(unittest.TestCase):
         """No file and no stdin exits 2 with error on stderr."""
         proc = self._run(
             "--json",
-            "--language", "javascript",
+            "--language", "js",
             "--mode", "enforce",
         )
         self.assertEqual(proc.returncode, 2, msg=proc.stderr)
@@ -120,9 +120,9 @@ class TestCLIContract(unittest.TestCase):
             env["WATCHLLM_LOG_PATH"] = str(log_path)
 
             proc = self._run(
-                str(fixture),
+                "--filepath", str(fixture),
                 "--json",
-                "--language", "javascript",
+                "--language", "js",
                 "--mode", "enforce",
                 env=env,
             )

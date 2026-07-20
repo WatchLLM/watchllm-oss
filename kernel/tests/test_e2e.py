@@ -43,7 +43,7 @@ def result_snapshot(result):
         "rule_results": [
             {
                 "rule_id": rule_result.rule_id,
-                "decision": rule_result.decision.value,
+                "status": rule_result.status.value,
                 "violations": [
                     {
                         "rule_id": violation.rule_id,
@@ -93,7 +93,7 @@ class TestEndToEndBehaviour(unittest.TestCase):
                 self.assertEqual(result.decision, Decision.BLOCK)
                 self.assertTrue(
                     any(
-                        rule_result.decision == RuleDecision.FAIL
+                        rule_result.status == RuleDecision.FAIL
                         for rule_result in result.rule_results
                     ),
                     "A blocking fixture must include at least one FAIL rule result",
@@ -115,7 +115,7 @@ class TestEndToEndBehaviour(unittest.TestCase):
                 self.assertEqual(result.decision, Decision.ALLOW)
                 self.assertTrue(
                     any(
-                        rule_result.decision == RuleDecision.FAIL
+                        rule_result.status == RuleDecision.FAIL
                         for rule_result in result.rule_results
                     ),
                     "Shadow mode should preserve failing rule results",
@@ -162,14 +162,13 @@ class TestEndToEndBehaviour(unittest.TestCase):
                 sys.executable,
                 "-m",
                 "watchllm_kernel",
-                "evaluate",
+                "check",
                 "--stdin",
                 "--json",
                 "--language",
-                "javascript",
+                "js",
                 "--mode",
                 "enforce",
-                str(fixture),
             ],
             input=source,
             capture_output=True,
@@ -187,11 +186,12 @@ class TestEndToEndBehaviour(unittest.TestCase):
             sys.executable,
             "-m",
             "watchllm_kernel",
-            "evaluate",
+            "check",
+            "--filepath",
             str(fixture),
             "--json",
             "--language",
-            "javascript",
+            "js",
             "--mode",
             "enforce",
         ]

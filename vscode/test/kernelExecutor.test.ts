@@ -12,7 +12,8 @@ function configFor(extraKernelArgs: string): WatchLlmConfig {
     return {
         pythonPath: process.execPath,
         kernelPath: `"${fixturePath()}" ${extraKernelArgs}`,
-        mode: 'enforce'
+        mode: 'enforce',
+        rustCliPath: null
     };
 }
 

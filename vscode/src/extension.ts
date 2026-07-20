@@ -24,7 +24,12 @@ export function activate(context: vscode.ExtensionContext): void {
             }
 
             runtimeConfig = getWatchLlmConfig();
+            diagnosticCollection.clear();
             console.log(`WatchLLM configuration updated. Mode: ${runtimeConfig.mode}`);
+        }),
+        vscode.workspace.onDidChangeWorkspaceFolders(() => {
+            diagnosticCollection.clear();
+            console.log('WatchLLM diagnostics cleared on workspace folder change.');
         }),
         vscode.workspace.onWillSaveTextDocument((event) => {
             event.waitUntil(

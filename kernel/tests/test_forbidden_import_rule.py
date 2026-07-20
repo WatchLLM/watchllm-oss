@@ -56,13 +56,13 @@ class TestForbiddenImportRule(unittest.TestCase):
         source = 'import { helper } from "./utils";'
         rule = ForbiddenImportRule()
         result = rule.evaluate(source)
-        self.assertEqual(result.decision, RuleDecision.PASS)
+        self.assertEqual(result.status, RuleDecision.PASS)
 
     def test_allowed_module_passes(self):
         source = 'import express from "express";'
         rule = ForbiddenImportRule()
         result = rule.evaluate(source)
-        self.assertEqual(result.decision, RuleDecision.PASS)
+        self.assertEqual(result.status, RuleDecision.PASS)
 
     # ------------------------------------------------------------------
     # Rule evaluation – fail cases
@@ -72,14 +72,14 @@ class TestForbiddenImportRule(unittest.TestCase):
         source = 'import cp from "child_process";'
         rule = ForbiddenImportRule()
         result = rule.evaluate(source)
-        self.assertEqual(result.decision, RuleDecision.FAIL)
+        self.assertEqual(result.status, RuleDecision.FAIL)
         self.assertTrue(any("child_process" in v.message for v in result.violations))
 
     def test_forbidden_relative_prefix_fails(self):
         source = 'import db from "../../../db/internal";'
         rule = ForbiddenImportRule()
         result = rule.evaluate(source)
-        self.assertEqual(result.decision, RuleDecision.FAIL)
+        self.assertEqual(result.status, RuleDecision.FAIL)
         self.assertTrue(
             any("../../../db/internal" in v.evidence for v in result.violations)
         )
@@ -91,7 +91,7 @@ class TestForbiddenImportRule(unittest.TestCase):
         )
         rule = ForbiddenImportRule()
         result = rule.evaluate(source)
-        self.assertEqual(result.decision, RuleDecision.FAIL)
+        self.assertEqual(result.status, RuleDecision.FAIL)
         self.assertGreaterEqual(len(result.violations), 2)
 
     # ------------------------------------------------------------------
@@ -102,13 +102,13 @@ class TestForbiddenImportRule(unittest.TestCase):
         source = 'import express from "express";'
         rule = ForbiddenImportRule(forbidden_modules=frozenset({"express"}))
         result = rule.evaluate(source)
-        self.assertEqual(result.decision, RuleDecision.FAIL)
+        self.assertEqual(result.status, RuleDecision.FAIL)
 
     def test_custom_forbidden_prefixes(self):
         source = 'import utils from "./utils";'
         rule = ForbiddenImportRule(forbidden_prefixes=frozenset({"./"}))
         result = rule.evaluate(source)
-        self.assertEqual(result.decision, RuleDecision.FAIL)
+        self.assertEqual(result.status, RuleDecision.FAIL)
 
 
 if __name__ == "__main__":

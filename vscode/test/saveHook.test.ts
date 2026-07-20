@@ -10,8 +10,9 @@ import type { KernelExecutionResult } from '../src/kernelExecutor';
 
 const baseConfig: WatchLlmConfig = {
     pythonPath: 'python',
-    kernelPath: '-m watchllm_kernel evaluate',
-    mode: 'enforce'
+    kernelPath: '-m watchllm_kernel check',
+    mode: 'enforce',
+    rustCliPath: null
 };
 
 function document(languageId: string, text: string): SaveCheckDocument {
