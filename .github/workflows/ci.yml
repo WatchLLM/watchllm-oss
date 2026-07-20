@@ -20,9 +20,9 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: |
-          pip install -e ".[dev]"
+          python -m pip install -e . pytest
       - name: Run tests
-        run: pytest -v
+        run: python -m pytest -v
 
   vscode:
     runs-on: ubuntu-latest
