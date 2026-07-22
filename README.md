@@ -4,7 +4,7 @@
 
 **Deterministic agent governance — open-core platform for safe autonomous coding agents.**
 
-[Website](https://watchllm.dev) · [Docs](https://docs.watchllm.dev) · [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=watchllm.watchllm-vscode)
+[Website](https://watchllm.dev) · [Docs](https://docs.watchllm.dev)
 
 ---
 
@@ -12,7 +12,7 @@
 
 WatchLLM is a deterministic runtime governance platform that parses code via Tree-sitter AST, enforces boundary, auth-flow, and secrets rules in real-time, and blocks unsafe writes before they happen.
 
-This repository contains the **open-core** components of WatchLLM — the local kernel, canonical schemas, the VS Code extension, and example scenarios.
+This repository contains the **currently shipped open-core** components of WatchLLM — the local kernel, canonical schemas, the VS Code extension source, and example scenarios. A MIT-licensed webproof client SDK is planned but has not shipped; the proving and verification engine remains proprietary.
 
 ## Architecture
 
@@ -65,7 +65,7 @@ watchllm-kernel scan ./my-project
 
 ### Use with VS Code
 
-Install the [WatchLLM extension](https://marketplace.visualstudio.com/items?itemName=watchllm.watchllm-vscode) from the marketplace.
+The extension is not currently published to the VS Code Marketplace. Build and run it locally using the instructions in [`vscode/README.md`](./vscode/README.md).
 
 ## License
 

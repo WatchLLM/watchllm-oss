@@ -6,7 +6,8 @@
   "publisher": "watchllm",
   "repository": {
     "type": "git",
-    "url": "https://github.com/watchllm/vscode.git"
+    "url": "https://github.com/WatchLLM/watchllm-oss.git",
+    "directory": "vscode"
   },
   "license": "MIT",
   "engines": {
