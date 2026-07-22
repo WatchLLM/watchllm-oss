@@ -14,7 +14,8 @@
 
 ```bash
 cd kernel
-pip install -e ".[dev]"
+python -m pip install -e .
+python -m pip install pytest
 pytest
 ```
 

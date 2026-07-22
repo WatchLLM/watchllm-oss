@@ -31,7 +31,7 @@ The extension is not the kernel. It serves purely as the write-path interceptor 
 
 ## Installation
 
-Install via the VS Code Extension marketplace (coming soon) or compile locally:
+The extension is not currently published to the VS Code Marketplace. Compile it locally:
 
 ```bash
 npm install
