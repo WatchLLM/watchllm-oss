@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "session_persistence": true,
+  "routes": [
+    {
+      "domain": "api.twitter.com",
+      "prover_mode": "reclaim",
+      "sensitivity": "low"
+    },
+    {
+      "domain": "secure.bank.com",
+      "prover_mode": "tlsnotary",
+      "sensitivity": "high",
+      "session_ttl": 300
+    }
+  ],
+  "aggregation": {
+    "batch_size": 10,
+    "timeout_seconds": 120
+  }
+}
