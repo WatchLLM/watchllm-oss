@@ -1,12 +1,12 @@
-ï»¿<div align="center">
-  <img src="https://raw.githubusercontent.com/kaadipranav/kaadipranav/refs/heads/main/assets/2.png" width="380" />
+<div align="center">
+  <img src="assets/banner.jpg" width="380" />
 </div>
 
-# WatchLLM â€” Open Core
+# WatchLLM — Open Core
 
 A deterministic governance kernel that intercepts autonomous agent file writes, parses the code using a Tree-sitter Abstract Syntax Tree, and blocks unsafe operations before they reach disk.
 
-[Website](https://watchllm.dev) Â· [Docs](https://docs.watchllm.dev) Â· [License: MIT](./LICENSE)
+[Website](https://watchllm.dev) · [Docs](https://docs.watchllm.dev) · [License: MIT](./LICENSE)
 
 ---
 
@@ -18,7 +18,7 @@ Autonomous coding agents (Aider, Claude Code, OpenCode) generate code without an
 - imports sandboxed or dangerous modules (`child_process`, `net`)
 - calls database mutations inside handlers that have no authentication check in scope
 
-These errors are systematic, not occasional. A tool that governs the write path deterministically â€” before the code ever touches the filesystem â€” removes an entire class of agent failure mode.
+These errors are systematic, not occasional. A tool that governs the write path deterministically — before the code ever touches the filesystem — removes an entire class of agent failure mode.
 
 ---
 
@@ -56,7 +56,7 @@ This repository contains the open-core components extracted from the private Wat
 |---|---|
 | `kernel/` | Python evaluation kernel. Runs Tree-sitter parsing and all four deterministic rules. Packaged as `watchllm-kernel` on PyPI. |
 | `schemas/` | JSON Schema (Draft-07) contracts for `event`, `violation`, `decision`, and `kernel_execution_result`. Shared with the closed-source Rust runtime via the same contracts. |
-| `vscode/` | TypeScript VS Code extension. Manages the `onWillSaveTextDocument` lifecycle, spawns the kernel subprocess, and renders diagnostics. Not published to the Marketplace â€” runs locally. |
+| `vscode/` | TypeScript VS Code extension. Manages the `onWillSaveTextDocument` lifecycle, spawns the kernel subprocess, and renders diagnostics. Not published to the Marketplace — runs locally. |
 | `examples/` | Scenario fixtures demonstrating each rule category. Used in the kernel test suite. |
 
 ---
@@ -71,9 +71,9 @@ Static analysis on a flat AST is straightforward. The difficulty is control flow
 
 The kernel avoids both false positives (blocking valid code) and false negatives (missing real issues) by using three output states:
 
-- `PASS` â€” an unconditional auth call precedes all detected mutations.
-- `FAIL` â€” a mutation occurs before any auth call.
-- `INCONCLUSIVE` â€” an auth call exists but only inside a branch. The violation is logged; the save is not blocked.
+- `PASS` — an unconditional auth call precedes all detected mutations.
+- `FAIL` — a mutation occurs before any auth call.
+- `INCONCLUSIVE` — an auth call exists but only inside a branch. The violation is logged; the save is not blocked.
 
 `INCONCLUSIVE` exists so the tool does not obstruct a developer working inside a complex handler. The ambiguity is flagged without halting the write.
 
