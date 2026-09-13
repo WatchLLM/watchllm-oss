@@ -9,3 +9,4 @@ build/
 .vscode-test/
 *.vsix
 .DS_Store
+.watchllm/
