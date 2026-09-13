@@ -1,35 +1,62 @@
-<div align="center">
-  <img src="assets/banner.jpg" width="380" />
+ï»¿<div align="center">
+  <img src="assets/banner.jpg" width="480" />
 </div>
 
-# WatchLLM — Open Core
+# WatchLLM Open Source
 
-A deterministic governance kernel that intercepts autonomous agent file writes, parses the code using a Tree-sitter Abstract Syntax Tree, and blocks unsafe operations before they reach disk.
+### Open components for deterministic governance of autonomous coding agents.
 
-[Website](https://watchllm.dev) · [Docs](https://docs.watchllm.dev) · [License: MIT](./LICENSE)
+WatchLLM Open Source contains the publicly available components of the WatchLLM system: source analysis, deterministic policy enforcement, editor integration, and selected evidence/verification infrastructure.
 
 ---
 
-## The problem
+## Public and private components
 
-Autonomous coding agents (Aider, Claude Code, OpenCode) generate code without any awareness of a project's security boundaries. They routinely produce code that:
+This repository is the public/open-source surface of WatchLLM.
 
-- embeds API keys directly in source files
-- imports sandboxed or dangerous modules (`child_process`, `net`)
-- calls database mutations inside handlers that have no authentication check in scope
+The broader WatchLLM system also contains private development components and integrations. This repository should not be interpreted as a complete mirror of the private monorepo.
 
-These errors are systematic, not occasional. A tool that governs the write path deterministically — before the code ever touches the filesystem — removes an entire class of agent failure mode.
+The public components are intended to be independently understandable and usable within the scope described below.
+
+---
+
+## Who this is for
+
+- developers experimenting with agent governance;
+- researchers exploring deterministic code-policy enforcement;
+- teams building coding-agent tooling;
+- engineers interested in AST-based source analysis;
+- contributors working on safe developer infrastructure.
+
+---
+
+## What is included
+
+- **Deterministic Evaluation Kernel (`kernel/`)**: AST-based static rule evaluation engine (`watchllm-kernel`) using Tree-sitter for JavaScript, TypeScript, and TSX. Evaluates secrets, forbidden imports, module boundaries, and authorization-flow order.
+- **Canonical Schema Contracts (`schemas/`)**: JSON Schema (Draft-07) specifications defining events, violations, decisions, and kernel execution result payloads.
+- **Editor Interceptor (`vscode/`)**: TypeScript VS Code extension integrating with `onWillSaveTextDocument` to enforce pre-save blocking and inline editor diagnostics via stdio IPC.
+- **Evidence & Verification SDK (`webproof/`)**: Public Python SDK (`watchllm-webproof`) for recording privacy-minimized HTTP request outcomes into a local SHA-256 Merkle accumulator.
+- **Curated Scenario Fixtures (`examples/`)**: Concrete safe and unsafe code samples demonstrating policy enforcement across secrets, boundaries, and auth-flow patterns.
+
+---
+
+## What is not included
+
+- **High-Performance Rust Runtime**: The closed-source production execution engine used in WatchLLM Cloud.
+- **Forensics & DAG Replay System**: Private recording, execution replay, and investigation dashboard.
+- **Remote Proof Settlement & Blockchain Attestation**: Production Merkle proof anchoring, distributed lease/queue consensus, and cryptographic attestation pipelines.
+- **Cloud Infrastructure & Production SLA**: Hosted governance services, multi-tenant databases, and enterprise SLAs.
 
 ---
 
 ## Architecture
 
-The kernel intercepts `onWillSaveTextDocument` in VS Code, passes the document buffer to the Python evaluation engine via stdio, and returns a decision before the write commits.
+The open-source pipeline enforces governance deterministically before code changes reach the filesystem:
 
 ```mermaid
 graph LR
     A["VS Code Extension
-    onWillSaveTextDocument"] -->|"stdin: file buffer"| B["Python Kernel
+    onWillSaveTextDocument"] -->|"stdio: buffer"| B["Python Kernel
     watchllm-kernel"]
     B --> C["Tree-sitter Parser
     JS + TS + TSX"]
@@ -38,84 +65,152 @@ graph LR
     C --> D3[boundary]
     C --> D4[auth_flow]
     D1 & D2 & D3 & D4 --> E{Decision Engine}
-    E -->|ALLOW| F[Write to disk]
-    E -->|BLOCK| G[Reject + inline diagnostic]
-    E -->|INCONCLUSIVE| H["Shadow-log, allow write"]
+    E -->|ALLOW| F[Commit to disk]
+    E -->|BLOCK| G[Reject save + Diagnostics]
+    E -->|INCONCLUSIVE| H[Shadow-log + Allow]
 ```
 
-**Enforce mode**: violations cancel the save via `event.waitUntil()` and surface as inline diagnostics.
-**Shadow mode**: violations are logged to `.watchllm/logs/violations.jsonl` without blocking.
-
 ---
 
-## What I built
+## Quickstart
 
-This repository contains the open-core components extracted from the private WatchLLM monorepo:
-
-| Component | Description |
-|---|---|
-| `kernel/` | Python evaluation kernel. Runs Tree-sitter parsing and all four deterministic rules. Packaged as `watchllm-kernel` on PyPI. |
-| `schemas/` | JSON Schema (Draft-07) contracts for `event`, `violation`, `decision`, and `kernel_execution_result`. Shared with the closed-source Rust runtime via the same contracts. |
-| `vscode/` | TypeScript VS Code extension. Manages the `onWillSaveTextDocument` lifecycle, spawns the kernel subprocess, and renders diagnostics. Not published to the Marketplace — runs locally. |
-| `examples/` | Scenario fixtures demonstrating each rule category. Used in the kernel test suite. |
-
----
-
-## Technical challenges
-
-### Auth-flow rule: 3-valued logic over ambiguous control flow
-
-The hardest rule to implement correctly is the auth-flow check: does an authentication call (`auth.verify`, `requireAuth`) always execute before a protected mutation (`db.insert`, `db.update`, `db.delete`) inside a request handler?
-
-Static analysis on a flat AST is straightforward. The difficulty is control flow: if the auth guard is inside a `try` block, a conditional, or a `switch` arm, you cannot prove it executes on every path without a full abstract interpreter.
-
-The kernel avoids both false positives (blocking valid code) and false negatives (missing real issues) by using three output states:
-
-- `PASS` — an unconditional auth call precedes all detected mutations.
-- `FAIL` — a mutation occurs before any auth call.
-- `INCONCLUSIVE` — an auth call exists but only inside a branch. The violation is logged; the save is not blocked.
-
-`INCONCLUSIVE` exists so the tool does not obstruct a developer working inside a complex handler. The ambiguity is flagged without halting the write.
-
-Handler detection covers three syntactic forms: named function declarations, arrow functions assigned to handler-like variable names, and `export default function` handlers. Source: [`kernel/src/watchllm_kernel/rules/auth_flow.py`](./kernel/src/watchllm_kernel/rules/auth_flow.py).
-
-### Fail-open timeout
-
-The VS Code extension enforces an 800 ms deadline on the kernel subprocess. If the kernel does not respond within that window, the extension allows the save and logs the timeout. Governance must not make the editor unreliable.
-
----
-
-## Quick start
+Clone the repository and install the kernel in editable mode:
 
 ```bash
-# Install the kernel
-pip install watchllm-kernel
-
-# Scan a local directory
-watchllm-kernel scan ./my-project
-
-# Run against a single file
-watchllm-kernel check ./src/api/users.ts
+git clone https://github.com/WatchLLM/watchllm-oss.git
+cd watchllm-oss/kernel
+pip install -e .
 ```
 
-To run the VS Code extension locally, follow the steps in [`vscode/README.md`](./vscode/README.md). The extension is not published to the Marketplace.
+Run the smallest working example:
+
+```bash
+echo "async function handler(req) { await db.user.delete(req.userId); await auth.verify(req.token); }" | watchllm-kernel check --stdin --language ts
+```
+
+Expected output:
+
+```
+Decision: BLOCK
+File: <stdin>
+Language: typescript
+Mode: enforce
+  - Protected operation occurs before auth verification. at line 1, col 37
+```
+
+Testing safe code:
+
+```bash
+echo "async function handler(req) { await auth.verify(req.token); await db.user.delete(req.userId); }" | watchllm-kernel check --stdin --language ts
+```
+
+Expected output:
+
+```
+Decision: ALLOW
+File: <stdin>
+Language: typescript
+Mode: enforce
+Violations: none
+```
 
 ---
 
-## Current status and limitations
+## Example policy
 
-**Status: experimental.** Kernel is at v0.1.1.
+WatchLLM projects configure evaluation rules through `.watchllm.yaml` in the project root:
 
-- Language support is limited to JavaScript and TypeScript (including TSX). Python and other languages are not yet implemented.
-- The `boundary` rule requires a `watchllm.yaml` config file in the project root to define module boundaries. Without it, boundary checks are skipped.
-- The VS Code extension is functional but not packaged for distribution.
-- The closed-source Rust runtime, used in WatchLLM Cloud, is not part of this repository.
+```yaml
+rules:
+  auth_flow:
+    enabled: true
+    severity: error
+  secrets:
+    enabled: true
+    severity: error
+  forbidden_imports:
+    enabled: true
+    severity: error
+    modules:
+      - child_process
+      - net
+  boundary:
+    enabled: true
+    severity: error
+```
 
 ---
 
-## Verification
+## Example
 
-The kernel ships with a test suite against the fixtures in `examples/`. To run:
+Input (`handler.ts`):
+
+```ts
+export async function handler(req, db, auth) {
+  // Destructive mutation executed before auth verification
+  await db.user.delete({ id: req.userId });
+  await auth.verify(req);
+}
+```
+
+Running the check:
+
+```bash
+watchllm-kernel check --filepath handler.ts
+```
+
+---
+
+## Example output
+
+Standard terminal output:
+
+```
+Decision: BLOCK
+File: handler.ts
+Language: typescript
+Mode: enforce
+  - Protected operation occurs before auth verification. at line 3, col 3
+```
+
+Structured JSON output (`watchllm-kernel check --filepath handler.ts --json`):
+
+```json
+{
+  "decision": "BLOCK",
+  "rule_results": [
+    {
+      "rule_id": "watchllm-rule-auth",
+      "status": "FAIL",
+      "violations": [
+        {
+          "rule_id": "watchllm-rule-auth",
+          "message": "Protected operation occurs before auth verification.",
+          "location": {
+            "line": 3,
+            "column": 3,
+            "end_line": 3,
+            "end_column": 43
+          },
+          "severity": "HIGH",
+          "evidence": "db.user.delete"
+        }
+      ]
+    }
+  ],
+  "file_path": "handler.ts",
+  "language": "typescript",
+  "mode": "enforce"
+}
+```
+
+---
+
+## Development
+
+### Kernel test suite
+
+Run the test suite across parser tests, individual rules, and JSON schema contract checks:
 
 ```bash
 cd kernel
@@ -123,4 +218,55 @@ pip install -e .
 pytest
 ```
 
-JSON Schema contracts in `schemas/` are validated against all kernel outputs during the test run.
+### VS Code extension
+
+Build the extension locally:
+
+```bash
+cd vscode
+npm install
+npm run compile
+```
+
+### Schemas validation
+
+Schema contracts are stored in `schemas/schemas/v1/` as Draft-07 JSON Schemas. Tests in `kernel/tests/test_cli_contract.py` assert that all kernel outputs strictly adhere to these definitions.
+
+---
+
+## Project structure
+
+| Directory | Description |
+|---|---|
+| [`kernel/`](./kernel) | Python evaluation kernel (`watchllm-kernel`) with Tree-sitter AST parser and rule implementations. |
+| [`schemas/`](./schemas) | Canonical JSON Schema (Draft-07) specifications for events, violations, and decisions. |
+| [`vscode/`](./vscode) | TypeScript VS Code extension handling `onWillSaveTextDocument` pre-save hooks and diagnostics. |
+| [`webproof/`](./webproof) | Public Python SDK (`watchllm-webproof`) for local privacy-preserving Merkle summaries. |
+| [`examples/`](./examples) | Curated safe and unsafe scenario fixtures for testing and onboarding. |
+
+---
+
+## Relationship to the private monorepo
+
+WatchLLM OSS contains the open-core deterministic analysis logic, schema definitions, and editor integration contracts extracted from the private development monorepo.
+
+- **Open Core**: Static AST analysis, 3-valued policy evaluation (`PASS`, `FAIL`, `INCONCLUSIVE`), schema contracts, and local editor interception.
+- **Private Systems**: Closed-source Rust runtime, execution DAG replays, forensic investigation tools, and enterprise proof settlement infrastructure.
+
+The open components operate completely independently without dependencies on any private cloud services or proprietary modules.
+
+---
+
+## Current limitations
+
+- **Status**: experimental (v0.1.1).
+- **Language support**: Currently covers JavaScript, TypeScript, and TSX. Python and other languages are planned.
+- **Control flow**: Analyzes scope and conditional branching conservatively; ambiguous execution paths return `INCONCLUSIVE` (shadow-logged) rather than attempting full abstract interpretation.
+- **Editor extension**: Functional for local development; not currently published to the Visual Studio Marketplace.
+- **WebProof module**: Computes a local deterministic SHA-256 Merkle accumulator; does not produce hardware-attested TLS proofs or interact with remote zero-knowledge provers.
+
+---
+
+## License
+
+MIT License â€” see [LICENSE](./LICENSE).
