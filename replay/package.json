@@ -1,0 +1,43 @@
+{
+  "name": "watchllm-replay",
+  "version": "0.1.0",
+  "description": "Execution replay and runtime forensics for autonomous coding agents.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node scripts/dev.mjs",
+    "start:legacy": "node src/index.js",
+    "test": "node --test",
+    "dev:backend": "node --watch src/server/index.cjs",
+    "start:backend": "node src/server/index.cjs",
+    "dev:frontend": "vite --host 0.0.0.0",
+    "build:frontend": "vite build",
+    "preview:frontend": "vite preview",
+    "typecheck": "tsc -p src/client/tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "watchllm",
+    "replay",
+    "forensics",
+    "agent-observability"
+  ],
+  "author": "WatchLLM",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@react-pdf/renderer": "^4.3.1",
+    "better-sqlite3": "^11.9.1",
+    "express": "^4.18.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.3",
+    "reactflow": "^11.11.4"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^6.0.2",
+    "postcss": "^8.5.24",
+    "supertest": "^7.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^8.0.16"
+  }
+}

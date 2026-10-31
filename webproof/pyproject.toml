@@ -1,11 +1,11 @@
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.8,<2"]
+build-backend = "maturin"
 
 [project]
 name = "watchllm-webproof"
-version = "0.1.0"
-description = "Public HTTP recording SDK with deterministic local proof summaries for WatchLLM WebProof."
+version = "0.2.0"
+description = "Public HTTP recording SDK with a Rust-backed deterministic local commitment engine."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -19,6 +19,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Rust",
 ]
 dependencies = [
   "httpx>=0.27,<1",
@@ -38,11 +39,12 @@ test = [
 [project.scripts]
 watchllm = "watchllm_webproof.cli:main"
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.maturin]
+manifest-path = "engine/Cargo.toml"
+module-name = "watchllm_webproof._native"
+python-source = "src"
+features = ["python"]
+strip = true
 
 [tool.pytest.ini_options]
 addopts = "-ra"
