@@ -21,8 +21,8 @@ class TestCLIContract(unittest.TestCase):
     # Helpers
     # ------------------------------------------------------------------
 
-    def _run(self, *args, stdin_text=None, env=None):
-        cmd = [sys.executable, "-m", "watchllm_kernel", "check", *args]
+    def _run(self, *args, stdin_text=None, env=None, command="check"):
+        cmd = [sys.executable, "-m", "watchllm_kernel", command, *args]
         proc = subprocess.run(
             cmd,
             input=stdin_text,
@@ -105,6 +105,90 @@ class TestCLIContract(unittest.TestCase):
         self.assertEqual(proc.returncode, 2, msg=proc.stderr)
         self.assertIn("Error", proc.stderr)
         self.assertEqual(proc.stdout.strip(), "")
+
+    # ------------------------------------------------------------------
+    # Documented contract vs binary
+    # ------------------------------------------------------------------
+
+    def test_evaluate_alias_matches_check(self):
+        """docs/specs/cli-contract.md calls the command `evaluate`."""
+        fixture = FIXTURES_DIR / "secrets" / "fail" / "hardcoded_stripe_secret.ts"
+
+        checked = self._run(
+            "--filepath", str(fixture), "--json", "--mode", "enforce",
+        )
+        evaluated = self._run(
+            "--filepath", str(fixture), "--json", "--mode", "enforce",
+            command="evaluate",
+        )
+
+        self.assertEqual(checked.returncode, evaluated.returncode)
+        self.assertEqual(checked.stdout, evaluated.stdout)
+        self.assertEqual(checked.returncode, 1, msg=evaluated.stderr)
+
+    def test_positional_file_is_rejected(self):
+        """The contract passes the file with --filepath, not positionally."""
+        fixture = FIXTURES_DIR / "secrets" / "fail" / "hardcoded_stripe_secret.ts"
+
+        proc = self._run(str(fixture), "--json", "--mode", "enforce")
+
+        self.assertEqual(proc.returncode, 2, msg=proc.stdout)
+        self.assertEqual(proc.stdout.strip(), "")
+        self.assertIn("unrecognized arguments", proc.stderr)
+
+    def test_documented_language_names_are_accepted(self):
+        """The contract names javascript/typescript/tsx, not js/ts."""
+        source = 'const key = "sk_live_1234567890abcdef";'
+        for language in ("javascript", "typescript", "tsx"):
+            with self.subTest(language=language):
+                proc = self._run(
+                    "--stdin", "--json", "--language", language,
+                    "--mode", "enforce", stdin_text=source,
+                )
+                self.assertEqual(proc.returncode, 1, msg=proc.stderr)
+                payload = json.loads(proc.stdout)
+                self.assertEqual(payload["decision"], "BLOCK")
+
+    def test_unknown_extension_is_an_input_error_not_an_allow(self):
+        """A gate that cannot parse a file must not report it as safe.
+
+        A .py file used to be evaluated as JavaScript and returned ALLOW, which
+        reads as "no violations" when nothing was checked at all.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "thing.py"
+            path.write_text("print('hi')\n", encoding="utf-8")
+
+            proc = self._run("--filepath", str(path), "--json", "--mode", "enforce")
+
+            self.assertEqual(proc.returncode, 2, msg=proc.stdout)
+            self.assertEqual(proc.stdout.strip(), "")
+            self.assertIn("cannot determine language", proc.stderr)
+
+    def test_stdin_without_language_is_an_input_error(self):
+        """The contract marks --language required; it used to default to JS."""
+        proc = self._run(
+            "--stdin", "--json", "--mode", "enforce",
+            stdin_text='const key = "sk_live_1234567890abcdef";',
+        )
+
+        self.assertEqual(proc.returncode, 2, msg=proc.stdout)
+        self.assertEqual(proc.stdout.strip(), "")
+        self.assertIn("--language is required", proc.stderr)
+
+    def test_tsx_uses_the_tsx_parser(self):
+        """.tsx is JSX; parsing it as plain TypeScript loses the tree."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "component.tsx"
+            path.write_text(
+                "export const B = () => <button>hi</button>;\n",
+                encoding="utf-8",
+            )
+            proc = self._run("--filepath", str(path), "--json", "--mode", "enforce")
+
+            self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+            payload = json.loads(proc.stdout)
+            self.assertEqual(payload["language"], "tsx")
 
     # ------------------------------------------------------------------
     # Logging isolation contract

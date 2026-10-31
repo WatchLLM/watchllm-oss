@@ -89,8 +89,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command", help="sub-command")
 
-    # check
-    check_parser = sub.add_parser("check", help="Check source against rules")
+    # check (also reachable as `evaluate`, the name the documented contract uses)
+    check_parser = sub.add_parser(
+        "check",
+        aliases=["evaluate"],
+        help="Check source against rules",
+    )
     check_parser.add_argument(
         "--stdin",
         action="store_true",
@@ -103,9 +107,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     check_parser.add_argument(
         "--language",
-        choices=["js", "ts"],
+        choices=list(_LANGUAGE_CHOICES),
         default=None,
-        help="Language identifier (js or ts). Inferred from file extension when omitted.",
+        help="Language identifier (js|ts|tsx, or javascript|typescript). "
+        "Inferred from the file extension when omitted; required with --stdin.",
     )
     check_parser.add_argument(
         "--mode",
@@ -130,20 +135,43 @@ _LANGUAGE_SHORT_MAP = {
     "ts": "typescript",
 }
 
+# The documented contract (docs/specs/cli-contract.md) names the languages in
+# full and includes tsx; the editor extension passes the short forms. Accept
+# both rather than making one of them a lie.
+_LANGUAGE_CHOICES = ("js", "javascript", "ts", "typescript", "tsx")
+
+_LANGUAGE_ALIASES = {
+    "js": "javascript",
+    "javascript": "javascript",
+    "ts": "typescript",
+    "typescript": "typescript",
+    "tsx": "tsx",
+}
+
+_SUFFIX_LANGUAGES = {
+    ".ts": "typescript",
+    ".tsx": "tsx",
+    ".js": "javascript",
+    ".jsx": "javascript",
+    ".mjs": "javascript",
+    ".cjs": "javascript",
+}
+
 
 def _resolve_language(language: str | None, file_path: str | None) -> str | None:
-    if language and language in _LANGUAGE_SHORT_MAP:
-        return _LANGUAGE_SHORT_MAP[language]
+    """Return a parser language id, or None when it cannot be determined.
+
+    Returning None is deliberate. The kernel is a write-path gate: silently
+    treating an unrecognised file as JavaScript means a .py or .vue file is
+    reported ALLOW, which reads as "safe" when the truth is "not evaluated".
+    The caller turns None into exit code 2.
+    """
     if language:
-        return language
+        return _LANGUAGE_ALIASES.get(language, language)
     if file_path is None:
         return None
-    suffix = Path(file_path).suffix.lower()
-    if suffix in (".ts", ".tsx"):
-        return "typescript"
-    if suffix in (".js", ".jsx", ".mjs", ".cjs"):
-        return "javascript"
-    return None
+    return _SUFFIX_LANGUAGES.get(Path(file_path).suffix.lower())
+
 
 
 # ---------------------------------------------------------------------------
@@ -162,7 +190,7 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
 
-    if args.command != "check":
+    if args.command not in ("check", "evaluate"):
         parser.print_help()
         return 0
 
@@ -182,6 +210,24 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     language = _resolve_language(args.language, file_path)
+    if language is None:
+        # Refuse to guess. Defaulting to JavaScript turns "I did not evaluate
+        # this" into "ALLOW", which is the one answer a governance gate must
+        # never give by accident.
+        if args.stdin:
+            print(
+                "Error: --language is required with --stdin "
+                f"(one of: {', '.join(_LANGUAGE_CHOICES)})",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"Error: cannot determine language from {file_path!r}. "
+                "Expected one of: .js .jsx .mjs .cjs .ts .tsx, "
+                f"or pass --language (one of: {', '.join(_LANGUAGE_CHOICES)})",
+                file=sys.stderr,
+            )
+        return 2
 
     # --- load config ---
     start_path = str(Path(file_path).parent) if file_path else "."

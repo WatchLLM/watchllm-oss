@@ -1,61 +1,48 @@
-"""Deterministic local accumulator; this is not a remote cryptographic attestation."""
+"""Rust-backed deterministic local accumulator; not a remote attestation."""
 
 from __future__ import annotations
 
-import hashlib
 import json
-from threading import Lock
 from typing import Any, Mapping
 
-
-def canonical_leaf(record: Mapping[str, Any]) -> bytes:
-    return json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
-
-
-def leaf_hash(record: Mapping[str, Any]) -> bytes:
-    return hashlib.sha256(b"watchllm-webproof-local-leaf-v1\0" + canonical_leaf(record)).digest()
+try:
+    from ._native import NativeAccumulator, canonical_leaf
+except ImportError as exc:  # pragma: no cover - exercised by source-tree import test
+    raise ImportError(
+        "watchllm-webproof requires its Rust native extension; install a platform wheel "
+        "or build from source with Rust and maturin. No cryptographic fallback is used."
+    ) from exc
 
 
 def merkle_root(records: list[Mapping[str, Any]]) -> str:
-    """Return a deterministic SHA-256 binary Merkle root, duplicating odd nodes."""
-    if not records:
-        return hashlib.sha256(b"").hexdigest()
-    level = [leaf_hash(record) for record in records]
-    while len(level) > 1:
-        if len(level) % 2:
-            level.append(level[-1])
-        level = [
-            hashlib.sha256(b"watchllm-webproof-local-node-v1\0" + level[i] + level[i + 1]).digest()
-            for i in range(0, len(level), 2)
-        ]
-    return level[0].hex()
+    """Return the native engine's root for compatibility with the historical helper."""
+    accumulator = LocalMerkleAccumulator()
+    for record in records:
+        accumulator.record(record)
+    return accumulator.proof("")["merkle_root"]
 
 
 class LocalMerkleAccumulator:
-    """Thread-safe state and proof generation for the explicitly local stub."""
+    """Thread-safe state and proof generation delegated to the Rust engine."""
 
     def __init__(self) -> None:
-        self._records: list[dict[str, Any]] = []
-        self._lock = Lock()
+        self._native = NativeAccumulator()
 
     def record(self, record: Mapping[str, Any]) -> None:
-        with self._lock:
-            self._records.append(dict(record))
+        if not isinstance(record, dict):
+            # The native boundary deliberately accepts concrete dicts only. Copying a
+            # Mapping also freezes its current top-level state before validation.
+            record = dict(record)
+        self._native.record(record)
 
     @property
     def records(self) -> tuple[Mapping[str, Any], ...]:
-        with self._lock:
-            return tuple(dict(record) for record in self._records)
+        # Rust stores canonical bytes, not borrowed Python objects. Decoding creates
+        # fresh snapshots, so callers cannot mutate accumulated commitments.
+        return tuple(json.loads(bytes(record)) for record in self._native.records_json())
 
     def proof(self, session_id: str) -> dict[str, Any]:
-        records = list(self.records)
-        return {
-            "proof_type": "local_merkle_stub",
-            "proof_version": "1.0.0",
-            "attestation": False,
-            "algorithm": "sha256-local-merkle-v1",
-            "aggregation_enabled": True,
-            "merkle_root": merkle_root(records),
-            "leaf_count": len(records),
-            "session_id": session_id,
-        }
+        return self._native.proof(session_id)
+
+
+__all__ = ["LocalMerkleAccumulator", "canonical_leaf", "merkle_root"]

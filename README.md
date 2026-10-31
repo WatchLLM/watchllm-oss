@@ -12,7 +12,7 @@
 
 WatchLLM is a deterministic runtime governance platform that parses code via Tree-sitter AST, enforces boundary, auth-flow, and secrets rules in real-time, and blocks unsafe writes before they happen.
 
-This repository contains the **currently shipped open-core** components of WatchLLM — the local kernel, canonical schemas, the VS Code extension source, and example scenarios. A MIT-licensed webproof client SDK is planned but has not shipped; the proving and verification engine remains proprietary.
+This repository contains the **currently shipped open-core** components of WatchLLM — the local kernel, canonical schemas, VS Code extension source, examples, and the MIT-licensed WebProof client SDK with its local non-attesting Rust commitment engine. Remote proving, verification, and attestation services are not included.
 
 ## Architecture
 
@@ -48,6 +48,7 @@ This repository contains the **currently shipped open-core** components of Watch
 | [`schemas/`](./schemas) | Canonical JSON Schema contracts for events, violations, and decisions |
 | [`vscode/`](./vscode) | VS Code extension for save-path governance and inline diagnostics |
 | [`examples/`](./examples) | Scenario fixtures demonstrating boundary, auth, and secrets rules |
+| [`webproof/`](./webproof) | Python HTTP recorder with a local, non-attesting Rust Merkle commitment engine |
 
 ## Quick Start
 

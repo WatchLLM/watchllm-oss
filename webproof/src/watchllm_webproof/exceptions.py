@@ -15,3 +15,7 @@ class UnsupportedSchemeError(WebProofError, ValueError):
 
 class AgentClosedError(WebProofError, RuntimeError):
     """Raised when a closed agent is used for another request."""
+
+
+class CloudSubmissionError(WebProofError, RuntimeError):
+    """Raised for sanitized WebProof Edge transport or response failures."""

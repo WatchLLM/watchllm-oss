@@ -1,0 +1,28 @@
+[package]
+name = "watchllm-webproof-engine"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+license = "MIT"
+description = "Local non-attesting commitment engine for watchllm-webproof"
+publish = false
+
+[lib]
+name = "_native"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["python"]
+python = ["dep:pyo3"]
+json = ["dep:serde_json"]
+wasm = ["json", "dep:wasm-bindgen"]
+
+[dependencies]
+pyo3 = { version = "0.23.5", features = ["extension-module"], optional = true }
+serde_json = { version = "1.0.138", features = ["arbitrary_precision"], optional = true }
+sha2 = "0.10.8"
+wasm-bindgen = { version = "0.2.100", optional = true }
+
+[dev-dependencies]
+proptest = "1.6.0"
+serde_json = { version = "1.0.138", features = ["arbitrary_precision"] }

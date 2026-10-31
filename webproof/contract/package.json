@@ -1,0 +1,15 @@
+{
+  "name": "@watchllm/webproof-anchor-private",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/compile.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check:abi": "node scripts/check-worker-abi.mjs",
+    "deploy": "node scripts/deploy.mjs"
+  },
+  "dependencies": {"viem": "2.55.8"},
+  "devDependencies": {"ganache": "7.9.2", "solc": "0.8.30"},
+  "engines": {"node": ">=22"}
+}

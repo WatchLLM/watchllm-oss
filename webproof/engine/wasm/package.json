@@ -1,0 +1,8 @@
+{
+  "name": "@watchllm/webproof-engine-parity",
+  "private": true,
+  "scripts": {
+    "build": "cargo build --manifest-path ../Cargo.toml --target wasm32-unknown-unknown --release --no-default-features --features wasm && wasm-bindgen ../target/wasm32-unknown-unknown/release/_native.wasm --target nodejs --out-dir pkg",
+    "test": "node --test parity.test.mjs"
+  }
+}

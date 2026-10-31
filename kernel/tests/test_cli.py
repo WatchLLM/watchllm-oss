@@ -113,6 +113,8 @@ class TestCLI(unittest.TestCase):
             "check",
             "--stdin",
             "--json",
+            "--language",
+            "js",
             "--mode",
             "enforce",
         ]

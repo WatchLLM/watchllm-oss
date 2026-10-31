@@ -1,0 +1,143 @@
+{
+  "contract": "python-json-dumps-sort-keys-ensure-ascii-v1",
+  "vectors": [
+    {
+      "name": "empty",
+      "records": [],
+      "canonical": [],
+      "merkle_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "one",
+      "records": [
+        {
+          "z": null,
+          "a": [
+            true,
+            -2,
+            "\u00e9\ud83d\ude00\n"
+          ]
+        }
+      ],
+      "canonical": [
+        "{\"a\":[true,-2,\"\\u00e9\\ud83d\\ude00\\n\"],\"z\":null}"
+      ],
+      "merkle_root": "2d53ab6ebd188e4f6bf2ad3155d9f1b068da15f88349b1dc1e1f250c1d67acc7"
+    },
+    {
+      "name": "even",
+      "records": [
+        {
+          "method": "GET",
+          "domain": "example.com",
+          "port": 443,
+          "path": "/",
+          "status_code": 200,
+          "error_type": null
+        },
+        {
+          "method": "POST",
+          "domain": "api.example.com",
+          "port": 443,
+          "path": "/events",
+          "status_code": 201,
+          "error_type": null
+        }
+      ],
+      "canonical": [
+        "{\"domain\":\"example.com\",\"error_type\":null,\"method\":\"GET\",\"path\":\"/\",\"port\":443,\"status_code\":200}",
+        "{\"domain\":\"api.example.com\",\"error_type\":null,\"method\":\"POST\",\"path\":\"/events\",\"port\":443,\"status_code\":201}"
+      ],
+      "merkle_root": "bce43f93b56234c6598a5b97839e2ba5517505e96d99be945f17edcf17d598ef"
+    },
+    {
+      "name": "odd",
+      "records": [
+        {
+          "n": 1
+        },
+        {
+          "n": 2
+        },
+        {
+          "n": 3
+        }
+      ],
+      "canonical": [
+        "{\"n\":1}",
+        "{\"n\":2}",
+        "{\"n\":3}"
+      ],
+      "merkle_root": "426c8e281c2cfd42214b50402cf70c8504b081f1ad5590958435703eb1b23671"
+    },
+    {
+      "name": "types_and_order",
+      "records": [
+        {
+          "string": "value",
+          "null": null,
+          "integer": 9007199254740993,
+          "false": false,
+          "emoji": "\ud83d\ude00",
+          "array": [
+            null,
+            true,
+            -7,
+            "\u00e9"
+          ]
+        }
+      ],
+      "canonical": [
+        "{\"array\":[null,true,-7,\"\\u00e9\"],\"emoji\":\"\\ud83d\\ude00\",\"false\":false,\"integer\":9007199254740993,\"null\":null,\"string\":\"value\"}"
+      ],
+      "merkle_root": "783f6c75aaec2e39e836971929e8bf99477c2265300808f743cdc1fe50551313"
+    },
+    {
+      "name": "request_outcomes",
+      "records": [
+        {
+          "method": "GET",
+          "scheme": "https",
+          "domain": "example.com",
+          "port": 443,
+          "path": "/ok",
+          "prover_mode": "reclaim",
+          "sensitivity": "high",
+          "session_ttl": 3600,
+          "status_code": 200,
+          "error_type": null
+        },
+        {
+          "method": "POST",
+          "scheme": "http",
+          "domain": "api.example.com",
+          "port": 8080,
+          "path": "/fail",
+          "prover_mode": null,
+          "sensitivity": null,
+          "session_ttl": null,
+          "status_code": null,
+          "error_type": "ConnectionError"
+        },
+        {
+          "method": "DELETE",
+          "scheme": "https",
+          "domain": "example.com",
+          "port": 443,
+          "path": "/items/1",
+          "prover_mode": "tlsnotary",
+          "sensitivity": "low",
+          "session_ttl": null,
+          "status_code": 204,
+          "error_type": null
+        }
+      ],
+      "canonical": [
+        "{\"domain\":\"example.com\",\"error_type\":null,\"method\":\"GET\",\"path\":\"/ok\",\"port\":443,\"prover_mode\":\"reclaim\",\"scheme\":\"https\",\"sensitivity\":\"high\",\"session_ttl\":3600,\"status_code\":200}",
+        "{\"domain\":\"api.example.com\",\"error_type\":\"ConnectionError\",\"method\":\"POST\",\"path\":\"/fail\",\"port\":8080,\"prover_mode\":null,\"scheme\":\"http\",\"sensitivity\":null,\"session_ttl\":null,\"status_code\":null}",
+        "{\"domain\":\"example.com\",\"error_type\":null,\"method\":\"DELETE\",\"path\":\"/items/1\",\"port\":443,\"prover_mode\":\"tlsnotary\",\"scheme\":\"https\",\"sensitivity\":\"low\",\"session_ttl\":null,\"status_code\":204}"
+      ],
+      "merkle_root": "7081adade70ea40a8766291a23b1c7c0bd897bac67eccecc786f62b8853248b1"
+    }
+  ]
+}
