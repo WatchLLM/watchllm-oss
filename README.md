@@ -4,7 +4,7 @@
 
 **Deterministic agent governance — open-core platform for safe autonomous coding agents.**
 
-[Website](https://watchllm.dev) · [Docs](https://docs.watchllm.dev)
+[Website](https://watchllm.dev) · [Docs](https://watchllm.dev/docs)
 
 ---
 
