@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/kaadipranav/kaadipranav/refs/heads/main/assets/2.png"/>
+  <img src="https://raw.githubusercontent.com/kaadipranav/kaadipranav/refs/heads/main/assets/watchllmnewposter.png"/>
 </div>
 
 **Deterministic agent governance — open-core platform for safe autonomous coding agents.**
