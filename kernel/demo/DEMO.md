@@ -9,10 +9,14 @@ same verdict.
 
 ## Setup
 
+Run the shell blocks in Git Bash on Windows; they use POSIX pipes and line
+continuations. PowerShell needs different quoting for the same commands.
+
 ```sh
 cd kernel
 py -m venv .venv
-. .venv/bin/activate          # Windows: .venv\Scripts\activate
+source .venv/Scripts/activate     # Windows, in Git Bash
+# or: source .venv/bin/activate    # macOS / Linux
 pip install -e .
 watchllm-kernel --version
 ```

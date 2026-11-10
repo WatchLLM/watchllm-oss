@@ -1,10 +1,10 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/kaadipranav/kaadipranav/refs/heads/main/assets/watchllmnewposter.png"/>
+  <img src="https://raw.githubusercontent.com/kaadipranav/kaadipranav/refs/heads/main/assets/2.png"/>
 </div>
 
 **Deterministic agent governance — open-core platform for safe autonomous coding agents.**
 
-[Website](https://watchllm.dev) · [Docs](https://watchllm.dev/docs)
+[Website](https://watchllm.dev) · [Docs](https://docs.watchllm.dev)
 
 ---
 
